@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Список пользователей</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .card-text {
+            margin-bottom: 0.5rem;
+        }
+
+        .container {
+            max-width: 1000px;
+        }
+
+        .btn-action {
+            margin-right: 8px;
+        }
+
+        .text-muted-small {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .btn-back {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <div class="text-center mb-4">
+        <h1 class="display-5 fw-bold">Пользователи системы</h1>
+        <p class="text-muted">Управляйте зарегистрированными пользователями и их ролями</p>
+    </div>
+
+    <div class="row g-4" th:if="${users}">
+        <div class="col-md-6" th:each="user : ${users}">
+            <div class="card p-4">
+                <div class="card-body">
+                    <h5 class="card-title" th:text="${user.name}">Имя пользователя</h5>
+                    <p class="card-text"><strong>ID:</strong> <span th:text="${user.id}">1</span></p>
+                    <p class="card-text"><strong>Роль:</strong> <span th:text="${user.role}">USER</span></p>
+
+                    <!-- Только если роль USER, показывать кнопки -->
+                    <div class="mt-3" th:if="${user.role == 'USER'}">
+                        <a th:href="@{'/admin/users/' + ${user.id} + '/edit'}"
+                           class="btn btn-sm btn-outline-primary btn-action">Редактировать</a>
+                        <form th:action="@{'/admin/users/' + ${user.id} + '/delete'}"
+                              method="post" style="display:inline-block">
+                            <button class="btn btn-sm btn-outline-danger" type="submit"
+                                    onclick="return confirm('Удалить пользователя?')">Удалить</button>
+                        </form>
+                    </div>
+
+                    <!-- Если админ — просто информация -->
+                    <div class="mt-3 text-muted" th:if="${user.role == 'ADMIN'}">
+                        <i class="bi bi-shield-lock"></i> Администратор — действия недоступны
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center btn-back">
+        <a href="/admin/dashboard" class="btn btn-outline-secondary">← Назад в админ-панель</a>
+    </div>
+</div>
+</body>
+</html>

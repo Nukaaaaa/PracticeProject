@@ -27,10 +27,17 @@ public class AuthController {
         User user = authService.login(name, password);
         if (user != null) {
             session.setAttribute("user", user); // сохранить пользователя в сессии
-            return "redirect:/tasks"; // или твоя защищённая страница
+
+            // Проверка роли и редирект
+            if ("ADMIN".equalsIgnoreCase(user.getRole())) {
+                return "redirect:/admin/dashboard"; // ⚠️ путь к админ-панели
+            } else {
+                return "redirect:/tasks";
+            }
         }
         return "login"; // снова login.html при неудаче
     }
+
 
 
     @GetMapping("register")
