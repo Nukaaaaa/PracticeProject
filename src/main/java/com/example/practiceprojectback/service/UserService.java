@@ -24,10 +24,13 @@ public class UserService {
     }
 
 
-    public User updateUser(Long id, User updatedUser){
+    public User updateAdminUser(Long id, User updatedUser){
         User user = getUserById(id);
         user.setName(updatedUser.getName());
         user.setRole(updatedUser.getRole());
+        return userRepository.save(user);
+    }
+    public User updateUser(User user) {
         return userRepository.save(user);
     }
 

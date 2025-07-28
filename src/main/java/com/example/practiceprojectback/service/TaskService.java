@@ -17,6 +17,14 @@ public class TaskService {
         return taskRepository.findAll();
     }
 
+    public List<Task> getTasksByUserId(Long userId) {
+        return taskRepository.findByUserId(userId);
+    }
+
+    public List<Task> getTasksByCategoryAndUserId(String category, Long userId) {
+        return  taskRepository.findByCategoryAndUserId(category, userId);
+    }
+
     public Task getTaskById(Long id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));

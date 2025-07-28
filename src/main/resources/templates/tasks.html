@@ -9,93 +9,86 @@
         body {
             background-color: #f8f9fa;
         }
-
-        .task-column {
-            background-color: #e9ecef;
+        .container {
+            max-width: 1300px;
+        }
+        .column {
+            background-color: #ffffff;
             padding: 20px;
             border-radius: 16px;
-            min-height: 450px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            min-height: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            transition: border 0.2s;
         }
-
+        .col-md-4 { display: flex; flex-direction: column; gap: 15px; }
         .task-card {
-            background-color: #ffffff;
+            background-color: #fff;
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 15px;
             cursor: grab;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-            transition: transform 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
         }
-
         .task-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
         }
-
-        .drag-over {
-            border: 2px dashed #0d6efd;
+        /*.drag-over {*/
+        /*    border: 2px dashed #0d6efd;*/
+        /*}*/
+        .author {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 5px;
         }
-
         .section-title {
             font-weight: 600;
-            font-size: 1.25rem;
-            margin-bottom: 15px;
             text-align: center;
+            margin-bottom: 15px;
+            color: #495057;
         }
-
-        .btn-sm {
-            font-size: 0.8rem;
+        .badge-status {
+            font-size: 0.75rem;
+            padding: 5px 10px;
+            border-radius: 10px;
         }
-
-        .modal-header {
+        .badge-created {
             background-color: #0d6efd;
             color: white;
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
         }
-
-        .modal-content {
-            border-radius: 12px;
+        .badge-progress {
+            background-color: #fd7e14;
+            color: white;
         }
-
-        .modal-footer {
-            justify-content: flex-end;
-        }
-
-        .filter-bar {
-            background-color: white;
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-
-        .header-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .header-bar h2 {
-            margin: 0;
-            font-weight: 700;
+        .badge-done {
+            background-color: #198754;
+            color: white;
         }
     </style>
 </head>
 <body class="container mt-5">
 
 <!-- Навигация -->
-<div class="d-flex justify-content-end align-items-center mb-3 gap-3">
-    <a href="/profile" class="text-dark text-decoration-none">
-        <i class="bi bi-person-circle" style="font-size: 1.8rem;" title="Профиль"></i>
-    </a>
-    <a href="/logout" class="btn btn-outline-danger">Выйти</a>
+<div class="d-flex justify-content-between align-items-center mb-3 gap-3">
+    <div>
+        <a th:if="${role == 'ADMIN'}" href="/admin/dashboard" class="btn btn-outline-secondary">
+            ← Назад в админ-панель
+        </a>
+    </div>
+    <div class="d-flex gap-3">
+        <a href="/profile" class="text-dark text-decoration-none">
+            <i class="bi bi-person-circle" style="font-size: 1.8rem;" title="Профиль"></i>
+        </a>
+        <a href="/logout" class="btn btn-outline-danger">Выйти</a>
+    </div>
 </div>
 
-<h2 class="mb-4">Управление задачами</h2>
+<!-- Заголовок -->
+<h2 class="mb-4" th:text="${role == 'ADMIN'} ? 'Все задачи' : 'Мои задачи'"></h2>
 
-<!-- Фильтр по категории -->
+<!-- Фильтр -->
 <form method="get" th:action="@{/tasks}" class="mb-4 d-flex align-items-center gap-3">
     <label for="categoryFilter" class="form-label mb-0">Фильтр по категории:</label>
     <select name="category" id="categoryFilter" class="form-select w-auto" onchange="this.form.submit()">
@@ -107,11 +100,11 @@
     </select>
 </form>
 
-<!-- Кнопка создания задачи -->
+<!-- Кнопка создания -->
 <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createTaskModal">Создать задачу</button>
 
 <!-- Модальное окно -->
-<div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+<div class="modal fade" id="createTaskModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form th:action="@{/tasks}" method="post">
             <div class="modal-content">
@@ -128,6 +121,7 @@
                         <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}"></option>
                     </select>
 
+                    <input type="hidden" name="userId" th:value="${user.id}">
                     <input type="hidden" name="status" value="CREATED">
                 </div>
                 <div class="modal-footer">
@@ -138,41 +132,69 @@
     </div>
 </div>
 
-<!-- Колонки задач -->
+<!-- Колонки -->
 <div class="row">
+
     <!-- CREATED -->
     <div class="col-md-4">
-        <h5 class="text-center">Создано</h5>
+        <h5 class="section-title">Создано</h5>
         <div class="column" ondrop="drop(event, 'CREATED')" ondragover="allowDrop(event)">
             <div th:each="task : ${tasks}" th:if="${task.status == 'CREATED'}"
-                 class="task-card" th:id="'task-' + ${task.id}" th:draggable="true"
+                 class="task-card" th:id="'task-' + ${task.id}" draggable="true"
                  ondragstart="drag(event)">
-                <strong th:text="${task.title}"></strong>
+                <div class="d-flex justify-content-between align-items-center">
+                    <strong th:text="${task.title}"></strong>
+                    <span class="badge-status badge-created">Создано</span>
+                </div>
                 <p th:text="${task.description}"></p>
-                <div class="d-flex justify-content-between mt-2">
-                    <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-warning">Изменить</a>
-                    <form th:action="@{'/tasks/delete/' + ${task.id}}" method="get">
-                        <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                <p th:if="${role == 'ADMIN'}" class="author">
+                    Автор: <span th:text="${task.user.name}"></span>
+                </p>
+
+                <!-- Кнопки действий -->
+                <div class="d-flex justify-content-end gap-2 mt-2">
+                    <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil-square"></i> Изменить
+                    </a>
+                    <form th:action="@{'/tasks/delete/' + ${task.id}}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Вы уверены, что хотите удалить задачу?')">
+                            <i class="bi bi-trash"></i> Удалить
+                        </button>
                     </form>
+
                 </div>
             </div>
         </div>
     </div>
 
+
     <!-- IN_PROGRESS -->
     <div class="col-md-4">
-        <h5 class="text-center">Выполняется</h5>
+        <h5 class="section-title">Выполняется</h5>
         <div class="column" ondrop="drop(event, 'IN_PROGRESS')" ondragover="allowDrop(event)">
             <div th:each="task : ${tasks}" th:if="${task.status == 'IN_PROGRESS'}"
-                 class="task-card" th:id="'task-' + ${task.id}" th:draggable="true"
+                 class="task-card" th:id="'task-' + ${task.id}" draggable="true"
                  ondragstart="drag(event)">
-                <strong th:text="${task.title}"></strong>
+                <div class="d-flex justify-content-between align-items-center">
+                    <strong th:text="${task.title}"></strong>
+                    <span class="badge-status badge-progress">В процессе</span>
+                </div>
                 <p th:text="${task.description}"></p>
-                <div class="d-flex justify-content-between mt-2">
-                    <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-warning">Изменить</a>
-                    <form th:action="@{'/tasks/delete/' + ${task.id}}" method="get">
-                        <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                <p th:if="${role == 'ADMIN'}" class="author">Автор: <span th:text="${task.user.name}"></span></p>
+
+                <!-- Кнопки действий -->
+                <div class="d-flex justify-content-end gap-2 mt-2">
+                    <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil-square"></i> Изменить
+                    </a>
+                    <form th:action="@{'/tasks/delete/' + ${task.id}}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Вы уверены, что хотите удалить задачу?')">
+                            <i class="bi bi-trash"></i> Удалить
+                        </button>
                     </form>
+
                 </div>
             </div>
         </div>
@@ -180,22 +202,37 @@
 
     <!-- DONE -->
     <div class="col-md-4">
-        <h5 class="text-center">Завершено</h5>
+        <h5 class="section-title">Завершено</h5>
         <div class="column" ondrop="drop(event, 'DONE')" ondragover="allowDrop(event)">
             <div th:each="task : ${tasks}" th:if="${task.status == 'DONE'}"
-                 class="task-card" th:id="'task-' + ${task.id}" th:draggable="true"
+                 class="task-card" th:id="'task-' + ${task.id}" draggable="true"
                  ondragstart="drag(event)">
-                <strong th:text="${task.title}"></strong>
+                <div class="d-flex justify-content-between align-items-center">
+                    <strong th:text="${task.title}"></strong>
+                    <span class="badge-status badge-done">Завершено</span>
+                </div>
                 <p th:text="${task.description}"></p>
-                <div class="d-flex justify-content-between mt-2">
-                    <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-warning">Изменить</a>
-                    <form th:action="@{'/tasks/delete/' + ${task.id}}" method="get">
-                        <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                <p th:if="${role == 'ADMIN'}" class="author">Автор: <span th:text="${task.user.name}"></span></p>
+
+                <!-- Кнопки действий -->
+                <div class="d-flex justify-content-end gap-2 mt-2">
+                    <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil-square"></i> Изменить
+                    </a>
+                    <form th:action="@{'/tasks/delete/' + ${task.id}}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Вы уверены, что хотите удалить задачу?')">
+                            <i class="bi bi-trash"></i> Удалить
+                        </button>
                     </form>
+
                 </div>
             </div>
+
+
         </div>
     </div>
+
 </div>
 
 <!-- Скрипты -->
@@ -218,17 +255,30 @@
         if (ev.target.classList.contains('column')) {
             ev.target.classList.remove('drag-over');
             ev.target.appendChild(dragged);
+
             const taskId = dragged.id.split('-')[1];
             updateTaskStatus(taskId, newStatus);
+
+            // меняем бейдж локально без перезагрузки
+            const badge = dragged.querySelector('.badge-status');
+            badge.className = "badge-status"; // сбрасываем классы
+            if (newStatus === "CREATED") {
+                badge.classList.add("badge-created");
+                badge.textContent = "Создано";
+            } else if (newStatus === "IN_PROGRESS") {
+                badge.classList.add("badge-progress");
+                badge.textContent = "В процессе";
+            } else if (newStatus === "DONE") {
+                badge.classList.add("badge-done");
+                badge.textContent = "Завершено";
+            }
         }
     }
 
     function updateTaskStatus(id, newStatus) {
         fetch(`/tasks/status/${id}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `status=${newStatus}`
         }).then(res => {
             if (!res.ok) alert("Ошибка при обновлении");

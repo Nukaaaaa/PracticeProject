@@ -67,6 +67,14 @@ public class AdminController {
         model.addAttribute("inProgressTasks", taskService.countTasksByStatus("IN_PROGRESS"));
         model.addAttribute("openTasks", taskService.countTasksByStatus("CREATED"));
 
+
+        model.addAttribute("totalUsers", userService.countUsers());
+        model.addAttribute("adminCount", userService.countUsersByRole("ADMIN"));
+        model.addAttribute("userCount", userService.countUsersByRole("USER"));
+        model.addAttribute("recentUsers", userService.getTop5Users());
+
+
+
         return "admin/reports";
     }
 

@@ -19,4 +19,8 @@ public class Task {
     private String description;
     private String category;
     private String status;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }
