@@ -63,9 +63,10 @@
             <i class="bi bi-person-circle"></i>
             <strong>Администратор</strong>
         </div>
-        <a href="/logout" class="btn btn-outline-danger btn-sm logout-btn">
-            <i class="bi bi-box-arrow-right"></i> Выйти
-        </a>
+        <form th:action="@{/logout}" method="post">
+            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+            <button type="submit" class="btn btn-outline-danger">Выйти</button>
+        </form>
     </div>
 
     <hr>

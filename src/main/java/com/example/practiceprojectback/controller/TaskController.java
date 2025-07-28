@@ -2,9 +2,10 @@ package com.example.practiceprojectback.controller;
 
 import com.example.practiceprojectback.model.Task;
 import com.example.practiceprojectback.model.User;
+import com.example.practiceprojectback.repository.UserRepository;
 import com.example.practiceprojectback.service.TaskService;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -17,27 +18,22 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+    private final UserRepository userRepository;
 
     @GetMapping
     public String showTasksPage(@RequestParam(value = "category", required = false) String category,
                                 Model model,
-                                HttpSession session) {
+                                Authentication authentication) {
 
-        User user = (User) session.getAttribute("user");
-
-        if (user == null) {
-            return "redirect:/login";
-        }
-        List<String> statuses = List.of("CREATED", "IN_PROGRESS", "DONE");
+        String username = authentication.getName();
+        User user = userRepository.findByName(username);
 
         List<Task> tasks;
         if ("ADMIN".equals(user.getRole())) {
-            // Админ видит все задачи
             tasks = (category != null && !category.isEmpty())
                     ? taskService.getTasksByCategory(category)
                     : taskService.getAllTasks();
         } else {
-            // Юзер видит только свои
             tasks = (category != null && !category.isEmpty())
                     ? taskService.getTasksByCategoryAndUserId(category, user.getId())
                     : taskService.getTasksByUserId(user.getId());
@@ -47,23 +43,26 @@ public class TaskController {
         model.addAttribute("categories", List.of("Work", "Study", "Personal"));
         model.addAttribute("selectedCategory", category);
         model.addAttribute("task", new Task());
-        model.addAttribute("user", user); // ✅ добавляем user в модель
+        model.addAttribute("user", user);
         model.addAttribute("role", user.getRole());
-        model.addAttribute("statuses",statuses);
+        model.addAttribute("statuses", List.of("CREATED", "IN_PROGRESS", "DONE"));
 
         return "tasks";
     }
 
-    @GetMapping("/edit/{id}")
-    public String showEditTaskForm(@PathVariable Long id, Model model, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+    @PostMapping
+    public String createTask(@ModelAttribute Task task, Authentication authentication) {
+        User user = userRepository.findByName(authentication.getName());
+        task.setUser(user);
+        taskService.createTask(task);
+        return "redirect:/tasks";
+    }
 
+    @GetMapping("/edit/{id}")
+    public String showEditTaskForm(@PathVariable Long id, Model model, Authentication authentication) {
+        User user = userRepository.findByName(authentication.getName());
         Task task = taskService.getTaskById(id);
 
-        // Проверка: юзер может редактировать только свои задачи
         if (!"ADMIN".equals(user.getRole()) && !task.getUser().getId().equals(user.getId())) {
             return "redirect:/tasks?error=forbidden";
         }
@@ -73,30 +72,14 @@ public class TaskController {
         return "edit-task";
     }
 
-    @PostMapping
-    public String createTask(@ModelAttribute Task task, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-    }
-
-        task.setUser(user); // Привязываем задачу к пользователю
-        taskService.createTask(task);
-        return "redirect:/tasks";
-    }
-
     @PostMapping("/edit/{id}")
     public String updateTask(@PathVariable Long id,
                              @ModelAttribute Task updatedTask,
-                             HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+                             Authentication authentication) {
+        User user = userRepository.findByName(authentication.getName());
 
         Task task = taskService.getTaskById(id);
 
-        // Проверка прав
         if (!"ADMIN".equals(user.getRole()) && !task.getUser().getId().equals(user.getId())) {
             return "redirect:/tasks?error=forbidden";
         }
@@ -106,15 +89,11 @@ public class TaskController {
     }
 
     @PostMapping("/delete/{id}")
-    public String deleteTask(@PathVariable Long id, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+    public String deleteTask(@PathVariable Long id, Authentication authentication) {
+        User user = userRepository.findByName(authentication.getName());
 
         Task task = taskService.getTaskById(id);
 
-        // Проверка прав
         if (!"ADMIN".equals(user.getRole()) && !task.getUser().getId().equals(user.getId())) {
             return "redirect:/tasks?error=forbidden";
         }
@@ -123,16 +102,12 @@ public class TaskController {
         return "redirect:/tasks";
     }
 
-
     @PostMapping("/status/{id}")
     @ResponseBody
     public String updateTaskStatus(@PathVariable Long id,
                                    @RequestParam("status") String status,
-                                   HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+                                   Authentication authentication) {
+        User user = userRepository.findByName(authentication.getName());
 
         Task task = taskService.getTaskById(id);
 

@@ -2,26 +2,28 @@ package com.example.practiceprojectback.controller;
 
 import com.example.practiceprojectback.model.User;
 import com.example.practiceprojectback.service.UserService;
-import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
+@RequiredArgsConstructor
+@RequestMapping("/profile")
 public class UserController {
 
     private final UserService userService;
-
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+    private final PasswordEncoder passwordEncoder;
 
     // Показать профиль
-    @GetMapping("/profile")
-    public String profile(Model model, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-
-        if (user != null) {
+    @GetMapping
+    public String profile(Model model, Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            User user = userService.findByName(userDetails.getUsername());
             model.addAttribute("user", user);
             return "profile"; // profile.html
         } else {
@@ -29,31 +31,24 @@ public class UserController {
         }
     }
 
-    // Обновить данные профиля
-    @PostMapping("/profile/update")
-    public String updateProfile(@ModelAttribute("user") User updatedUser, HttpSession session) {
-        User sessionUser = (User) session.getAttribute("user");
+    // Обновить профиль
+    @PostMapping("/update")
+    public String updateProfile(@ModelAttribute("user") User updatedUser,
+                                Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            User user = userService.findByName(userDetails.getUsername());
 
-        if (sessionUser != null) {
-            // Обновляем имя
-            sessionUser.setName(updatedUser.getName());
+            // обновляем имя
+            user.setName(updatedUser.getName());
 
-            // Если введён новый пароль — обновляем
+            // если введён новый пароль — шифруем
             if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
-                sessionUser.setPassword(updatedUser.getPassword());
+                user.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
             }
 
-            userService.updateUser(sessionUser); // обновляем в базе
-            session.setAttribute("user", sessionUser); // обновляем в сессии
+            userService.updateUser(user);
         }
-
-        return "redirect:/profile";
-    }
-
-    // Выход из аккаунта
-    @GetMapping("/logout")
-    public String logout(HttpSession session) {
-        session.invalidate(); // Удаляет все данные из сессии
-        return "redirect:/login"; // Возвращаем пользователя на страницу логина
+        return "redirect:/profile?success";
     }
 }

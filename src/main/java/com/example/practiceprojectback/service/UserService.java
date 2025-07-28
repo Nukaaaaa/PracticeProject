@@ -23,6 +23,10 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
 
+    // ✅ поиск по имени (для Spring Security)
+    public User findByName(String name) {
+        return userRepository.findByName(name);
+    }
 
     public User updateAdminUser(Long id, User updatedUser){
         User user = getUserById(id);
@@ -30,6 +34,7 @@ public class UserService {
         user.setRole(updatedUser.getRole());
         return userRepository.save(user);
     }
+
     public User updateUser(User user) {
         return userRepository.save(user);
     }
@@ -38,22 +43,18 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    // ✅ Подсчет всех пользователей
     public long countUsers() {
         return userRepository.count();
     }
 
-    // ✅ Подсчет по роли
     public long countUsersByRole(String role){
         return userRepository.countByRole(role);
     }
 
-    // ✅ Последние 5 пользователей
     public List<User> getTop5Users() {
         return userRepository.findTop5ByOrderByIdDesc();
     }
 
-    // ✅ Обновление только роли пользователя
     public User updateUserRole(Long id, String newRole) {
         User user = getUserById(id);
         user.setRole(newRole);

@@ -2,24 +2,23 @@ package com.example.practiceprojectback.service;
 
 import com.example.practiceprojectback.model.User;
 import com.example.practiceprojectback.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
-    @Autowired
-    private  UserRepository userRepository;
 
-    public User register(User user){
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public User register(User user) {
         user.setRole("USER");
-        return userRepository.save(user);
-    }
 
-    public User login(String name, String password) {
-        User user = userRepository.findByName(name);
-        if (user != null && user.getPassword().equals(password)) {
-            return user;
-        }
-        return null;
+        // хэшируем пароль
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        return userRepository.save(user);
     }
 }

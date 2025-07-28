@@ -5,6 +5,11 @@
     <title>Задачи</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <!-- CSRF токен -->
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+
     <style>
         body {
             background-color: #f8f9fa;
@@ -35,9 +40,6 @@
         .task-card:hover {
             transform: translateY(-2px);
         }
-        /*.drag-over {*/
-        /*    border: 2px dashed #0d6efd;*/
-        /*}*/
         .author {
             font-size: 0.85rem;
             color: #6c757d;
@@ -81,7 +83,11 @@
         <a href="/profile" class="text-dark text-decoration-none">
             <i class="bi bi-person-circle" style="font-size: 1.8rem;" title="Профиль"></i>
         </a>
-        <a href="/logout" class="btn btn-outline-danger">Выйти</a>
+        <form th:action="@{/logout}" method="post">
+            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+            <button type="submit" class="btn btn-outline-danger">Выйти</button>
+        </form>
+
     </div>
 </div>
 
@@ -151,23 +157,21 @@
                     Автор: <span th:text="${task.user.name}"></span>
                 </p>
 
-                <!-- Кнопки действий -->
                 <div class="d-flex justify-content-end gap-2 mt-2">
                     <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-pencil-square"></i> Изменить
                     </a>
                     <form th:action="@{'/tasks/delete/' + ${task.id}}" method="post" style="display:inline;">
+                        <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
                         <button type="submit" class="btn btn-sm btn-outline-danger"
                                 onclick="return confirm('Вы уверены, что хотите удалить задачу?')">
                             <i class="bi bi-trash"></i> Удалить
                         </button>
                     </form>
-
                 </div>
             </div>
         </div>
     </div>
-
 
     <!-- IN_PROGRESS -->
     <div class="col-md-4">
@@ -183,18 +187,17 @@
                 <p th:text="${task.description}"></p>
                 <p th:if="${role == 'ADMIN'}" class="author">Автор: <span th:text="${task.user.name}"></span></p>
 
-                <!-- Кнопки действий -->
                 <div class="d-flex justify-content-end gap-2 mt-2">
                     <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-pencil-square"></i> Изменить
                     </a>
                     <form th:action="@{'/tasks/delete/' + ${task.id}}" method="post" style="display:inline;">
+                        <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
                         <button type="submit" class="btn btn-sm btn-outline-danger"
                                 onclick="return confirm('Вы уверены, что хотите удалить задачу?')">
                             <i class="bi bi-trash"></i> Удалить
                         </button>
                     </form>
-
                 </div>
             </div>
         </div>
@@ -214,22 +217,19 @@
                 <p th:text="${task.description}"></p>
                 <p th:if="${role == 'ADMIN'}" class="author">Автор: <span th:text="${task.user.name}"></span></p>
 
-                <!-- Кнопки действий -->
                 <div class="d-flex justify-content-end gap-2 mt-2">
                     <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-pencil-square"></i> Изменить
                     </a>
                     <form th:action="@{'/tasks/delete/' + ${task.id}}" method="post" style="display:inline;">
+                        <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
                         <button type="submit" class="btn btn-sm btn-outline-danger"
                                 onclick="return confirm('Вы уверены, что хотите удалить задачу?')">
                             <i class="bi bi-trash"></i> Удалить
                         </button>
                     </form>
-
                 </div>
             </div>
-
-
         </div>
     </div>
 
@@ -259,9 +259,9 @@
             const taskId = dragged.id.split('-')[1];
             updateTaskStatus(taskId, newStatus);
 
-            // меняем бейдж локально без перезагрузки
+            // меняем бейдж локально
             const badge = dragged.querySelector('.badge-status');
-            badge.className = "badge-status"; // сбрасываем классы
+            badge.className = "badge-status";
             if (newStatus === "CREATED") {
                 badge.classList.add("badge-created");
                 badge.textContent = "Создано";
@@ -276,9 +276,15 @@
     }
 
     function updateTaskStatus(id, newStatus) {
+        const token = document.querySelector('meta[name="_csrf"]').content;
+        const header = document.querySelector('meta[name="_csrf_header"]').content;
+
         fetch(`/tasks/status/${id}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                [header]: token
+            },
             body: `status=${newStatus}`
         }).then(res => {
             if (!res.ok) alert("Ошибка при обновлении");
