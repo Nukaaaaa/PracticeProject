@@ -161,6 +161,9 @@
                     <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-pencil-square"></i> Изменить
                     </a>
+                    <a th:href="@{'/comments/task/' + ${task.id}}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-chat-dots"></i> Комментарии
+                    </a>
                     <form th:action="@{'/tasks/delete/' + ${task.id}}" method="post" style="display:inline;">
                         <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
                         <button type="submit" class="btn btn-sm btn-outline-danger"
@@ -191,6 +194,9 @@
                     <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-pencil-square"></i> Изменить
                     </a>
+                    <a th:href="@{'/comments/task/' + ${task.id}}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-chat-dots"></i> Комментарии
+                    </a>
                     <form th:action="@{'/tasks/delete/' + ${task.id}}" method="post" style="display:inline;">
                         <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
                         <button type="submit" class="btn btn-sm btn-outline-danger"
@@ -220,6 +226,9 @@
                 <div class="d-flex justify-content-end gap-2 mt-2">
                     <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-pencil-square"></i> Изменить
+                    </a>
+                    <a th:href="@{'/comments/task/' + ${task.id}}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-chat-dots"></i> Комментарии
                     </a>
                     <form th:action="@{'/tasks/delete/' + ${task.id}}" method="post" style="display:inline;">
                         <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>

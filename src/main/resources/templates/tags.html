@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Теги проекта</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { max-width: 900px; }
+        .tag-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tag-name {
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body class="container mt-5">
+
+<!-- Навигация -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <a th:href="@{'/projects'}" class="btn btn-outline-secondary">← Назад к проектам</a>
+    <a th:href="@{'/project/board/' + ${projectId}}" class="btn btn-outline-primary">
+        Вернуться к доске Kanban
+    </a>
+</div>
+
+<!-- Заголовок -->
+<h2 class="mb-4">
+    Теги проекта <span th:text="${project.name}"></span>
+</h2>
+
+<!-- Список тегов -->
+<div th:if="${#lists.isEmpty(tags)}" class="alert alert-warning">
+    Тегов пока нет. Добавьте первый!
+</div>
+
+<div th:each="tag : ${tags}" class="tag-card">
+    <span class="tag-name" th:text="${tag.name}"></span>
+
+    <!-- Доступно только ADMIN -->
+    <form th:if="${role == 'ADMIN'}" th:action="@{'/tags/' + ${tag.id} + '/delete'}" method="post">
+        <input type="hidden" name="projectId" th:value="${projectId}">
+        <button class="btn btn-sm btn-outline-danger" type="submit"
+                onclick="return confirm('Удалить тег?')">
+            Удалить
+        </button>
+    </form>
+</div>
+
+<!-- Добавление нового тега -->
+<div class="card p-4 mt-4" th:if="${role == 'ADMIN'}">
+    <h5>Добавить новый тег</h5>
+    <form th:action="@{'/tags/project/' + ${projectId}}" method="post">
+        <input type="text" name="name" class="form-control mb-3" placeholder="Название тега" required>
+        <button type="submit" class="btn btn-success">Добавить</button>
+    </form>
+</div>
+
+</body>
+</html>

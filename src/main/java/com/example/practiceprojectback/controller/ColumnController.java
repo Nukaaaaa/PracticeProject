@@ -3,33 +3,30 @@ package com.example.practiceprojectback.controller;
 import com.example.practiceprojectback.model.Column;
 import com.example.practiceprojectback.service.ColumnService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/columns")
+@Controller
 @RequiredArgsConstructor
+@RequestMapping("/columns")
 public class ColumnController {
+
     private final ColumnService columnService;
 
-    @GetMapping("/project/{projectId}")
-    public List<Column> getColumns(@PathVariable Long projectId) {
-        return columnService.getColumnsByProject(projectId);
+    // 📌 Добавить колонку
+    @PostMapping("/project/{projectId}")
+    public String createColumn(@PathVariable Long projectId, @ModelAttribute Column column) {
+        columnService.createColumn(column);
+        return "redirect:/projects/" + projectId + "/board";
     }
 
-    @PostMapping
-    public Column createColumn(@RequestBody Column column) {
-        return columnService.createColumn(column);
-    }
-
-    @PutMapping("/{id}")
-    public Column updateColumn(@PathVariable Long id, @RequestBody Column column) {
-        return columnService.updateColumn(id, column);
-    }
-
-    @DeleteMapping("/{id}")
-    public void deleteColumn(@PathVariable Long id) {
+    // 📌 Удалить колонку
+    @PostMapping("/{id}/delete")
+    public String deleteColumn(@PathVariable Long id, @RequestParam Long projectId) {
         columnService.deleteColumn(id);
+        return "redirect:/projects/" + projectId + "/board";
     }
 }

@@ -118,4 +118,12 @@ public class TaskController {
         taskService.updateTaskStatus(id, status);
         return "OK";
     }
+
+    @PostMapping("/{id}/move")
+    @ResponseBody
+    public String moveTask(@PathVariable Long id, @RequestParam Long columnId) {
+        taskService.moveTaskToColumn(id, columnId);
+        return "OK";
+    }
+
 }
