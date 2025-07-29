@@ -12,20 +12,20 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final CustomAuthenticationSuccessHandler successHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/tasks/**", "/profile/**").hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers("/login", "/register", "/css/**", "/js/**").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/profile").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/tasks/status/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/login")              // кастомная форма логина
-                        .defaultSuccessUrl("/tasks", true) // после входа → /tasks
+                        .loginPage("/login")
+                        .successHandler(successHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout
@@ -41,6 +41,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-
 }

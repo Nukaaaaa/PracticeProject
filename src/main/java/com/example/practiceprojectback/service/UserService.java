@@ -2,6 +2,7 @@ package com.example.practiceprojectback.service;
 
 import com.example.practiceprojectback.model.User;
 import com.example.practiceprojectback.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,9 +10,11 @@ import java.util.List;
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder; // ✅ добавляем
 
-    public UserService(UserRepository userRepository){
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder; // ✅ внедрение
     }
 
     public List<User> getAllUsers(){
@@ -32,11 +35,27 @@ public class UserService {
         User user = getUserById(id);
         user.setName(updatedUser.getName());
         user.setRole(updatedUser.getRole());
+
+        // пароль админом можно поменять, если не пустой
+        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
+        }
+
         return userRepository.save(user);
     }
 
-    public User updateUser(User user) {
-        return userRepository.save(user);
+    public User updateUser(User updatedUser) {
+        User existingUser = userRepository.findById(updatedUser.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        existingUser.setName(updatedUser.getName());
+        existingUser.setRole(updatedUser.getRole());
+
+        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
+            existingUser.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
+        }
+
+        return userRepository.save(existingUser);
     }
 
     public void deleteUser(Long id){

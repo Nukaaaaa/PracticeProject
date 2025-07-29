@@ -34,23 +34,22 @@ public class AdminController {
         return "admin/users";
     }
 
-    // Форма редактирования пользователя
+    // Открыть форму редактирования
     @GetMapping("/users/{id}/edit")
     public String editUser(@PathVariable Long id, Model model) {
         User user = userService.getUserById(id);
-        if (user == null) {
-            return "redirect:/admin/users";
-        }
         model.addAttribute("user", user);
         return "admin/edit-user";
     }
 
-    // Обновить роль пользователя
-    @PostMapping("/users/{id}/update-role")
-    public String updateUserRole(@PathVariable Long id, @RequestParam String role) {
-        userService.updateUserRole(id, role);
+    // Обновить пользователя (имя, пароль, роль)
+    @PostMapping("/users/{id}/update")
+    public String updateUser(@PathVariable Long id,
+                             @ModelAttribute("user") User updatedUser) {
+        userService.updateAdminUser(id, updatedUser);
         return "redirect:/admin/users";
     }
+
 
     // Удалить пользователя
     @PostMapping("/users/{id}/delete")
