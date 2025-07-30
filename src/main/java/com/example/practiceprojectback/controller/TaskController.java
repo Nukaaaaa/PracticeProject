@@ -51,12 +51,18 @@ public class TaskController {
     }
 
     @PostMapping
-    public String createTask(@ModelAttribute Task task, Authentication authentication) {
+    public String createTask(@ModelAttribute Task task,
+                             @RequestParam Long columnId,
+                             Authentication authentication) {
         User user = userRepository.findByName(authentication.getName());
         task.setUser(user);
-        taskService.createTask(task);
-        return "redirect:/tasks";
+
+        taskService.createTask(task, columnId);
+
+        // после добавления вернуться на Kanban доску
+        return "redirect:/projects/" + task.getColumn().getProject().getId() + "/board";
     }
+
 
     @GetMapping("/edit/{id}")
     public String showEditTaskForm(@PathVariable Long id, Model model, Authentication authentication) {

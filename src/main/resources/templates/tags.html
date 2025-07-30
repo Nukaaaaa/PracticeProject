@@ -47,7 +47,7 @@
     <span class="tag-name" th:text="${tag.name}"></span>
 
     <!-- Доступно только ADMIN -->
-    <form th:if="${role == 'ADMIN'}" th:action="@{'/tags/' + ${tag.id} + '/delete'}" method="post">
+    <form th:action="@{'/tags/' + ${tag.id} + '/delete'}" method="post">
         <input type="hidden" name="projectId" th:value="${projectId}">
         <button class="btn btn-sm btn-outline-danger" type="submit"
                 onclick="return confirm('Удалить тег?')">
@@ -57,7 +57,7 @@
 </div>
 
 <!-- Добавление нового тега -->
-<div class="card p-4 mt-4" th:if="${role == 'ADMIN'}">
+<div class="card p-4 mt-4">
     <h5>Добавить новый тег</h5>
     <form th:action="@{'/tags/project/' + ${projectId}}" method="post">
         <input type="text" name="name" class="form-control mb-3" placeholder="Название тега" required>

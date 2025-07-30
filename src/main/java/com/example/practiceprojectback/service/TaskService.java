@@ -26,7 +26,7 @@ public class TaskService {
     }
 
     public List<Task> getTasksByCategoryAndUserId(String category, Long userId) {
-        return  taskRepository.findByCategoryAndUserId(category, userId);
+        return taskRepository.findByCategoryAndUserId(category, userId);
     }
 
     public Task getTaskById(Long id) {
@@ -34,7 +34,11 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
     }
 
-    public Task createTask(Task task) {
+    // ✅ создание задачи с колонкой
+    public Task createTask(Task task, Long columnId) {
+        Column column = columnRepository.findById(columnId)
+                .orElseThrow(() -> new RuntimeException("Column not found with id: " + columnId));
+        task.setColumn(column);
         return taskRepository.save(task);
     }
 
@@ -74,8 +78,7 @@ public class TaskService {
         return taskRepository.findTop5ByOrderByIdDesc();
     }
 
-
-
+    // ✅ перенос задачи в другую колонку (drag & drop)
     public void moveTaskToColumn(Long taskId, Long columnId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Задача не найдена"));

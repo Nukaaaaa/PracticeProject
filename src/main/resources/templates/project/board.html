@@ -26,7 +26,6 @@
         }
         .kanban-header {
             font-weight: 600;
-            text-align: center;
             margin-bottom: 10px;
         }
         .task-card {
@@ -47,7 +46,12 @@
 <!-- Навигация -->
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 th:text="'Проект: ' + ${project.name}"></h2>
-    <a href="/projects" class="btn btn-outline-secondary">← Все проекты</a>
+    <div>
+        <a href="/projects" class="btn btn-outline-secondary me-2">← Все проекты</a>
+        <a th:href="@{'/tags/project/' + ${project.id}}" class="btn btn-outline-primary">
+            Теги проекта
+        </a>
+    </div>
 </div>
 
 <!-- Кнопка добавления колонки -->
@@ -60,10 +64,16 @@
 <!-- Канбан-доска -->
 <div class="board-container">
     <div th:each="column : ${columns}" class="kanban-column"
-         th:attr="ondrop=|drop(event, ${column.id})|; ondragover=|allowDrop(event)|">
+         th:attr="ondrop=|drop(event, ${column.id})|"
+         ondragover="allowDrop(event)">
 
         <div class="kanban-header d-flex justify-content-between align-items-center">
-            <span th:text="${column.name}"></span>
+            <span>
+                <span th:text="${column.name}"></span>
+                <small class="text-muted" th:if="${column.wipLimit != null}">
+                    (лимит: <span th:text="${column.wipLimit}"></span>)
+                </small>
+            </span>
             <form th:action="@{'/columns/' + ${column.id} + '/delete'}" method="post" style="display:inline;">
                 <input type="hidden" name="projectId" th:value="${project.id}">
                 <button type="submit" class="btn btn-sm btn-outline-danger"
@@ -113,6 +123,7 @@
                 </div>
                 <div class="modal-body">
                     <input type="text" name="name" class="form-control mb-2" placeholder="Название колонки" required>
+                    <input type="number" name="wipLimit" class="form-control mb-2" placeholder="WIP лимит (необязательно)">
                     <input type="hidden" name="projectId" th:value="${project.id}">
                 </div>
                 <div class="modal-footer">
@@ -162,10 +173,11 @@
             .then(res => { if (!res.ok) alert("Ошибка при обновлении"); });
     }
 
-    // Подставляем columnId в форму задачи
-    document.querySelectorAll('[data-column-id]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.getElementById('taskColumnId').value = this.getAttribute('data-column-id');
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[data-column-id]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.getElementById('taskColumnId').value = this.getAttribute('data-column-id');
+            });
         });
     });
 </script>

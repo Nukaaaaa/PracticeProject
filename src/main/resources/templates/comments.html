@@ -38,8 +38,10 @@
 </div>
 
 <div th:each="comment : ${comments}" class="comment-card">
-    <p th:text="${comment.text}"></p>
-    <p class="author">Автор: <span th:text="${comment.user.name}"></span></p>
+    <p th:text="${comment.content}"></p> <!-- исправлено -->
+    <p class="author">
+        Автор: <span th:text="${comment.author != null ? comment.author.name : 'Аноним'}"></span>
+    </p>
 
     <form th:action="@{'/comments/' + ${comment.id} + '/delete'}" method="post">
         <input type="hidden" name="taskId" th:value="${task.id}">
@@ -54,7 +56,8 @@
 <div class="card p-3 mt-4">
     <h5>Добавить комментарий</h5>
     <form th:action="@{'/comments/task/' + ${task.id}}" method="post">
-        <textarea class="form-control mb-3" name="text" rows="3" placeholder="Напишите комментарий..." required></textarea>
+        <textarea class="form-control mb-3" name="content" rows="3"
+                  placeholder="Напишите комментарий..." required></textarea>
         <button class="btn btn-primary" type="submit">Отправить</button>
     </form>
 </div>
