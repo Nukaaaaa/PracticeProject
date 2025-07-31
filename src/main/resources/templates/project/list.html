@@ -25,7 +25,11 @@
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold">Мои проекты</h2>
-        <button class="btn btn-primary btn-new" data-bs-toggle="modal" data-bs-target="#createProjectModal">
+        <!-- Кнопка создания проекта доступна только ADMIN -->
+        <button th:if="${role == 'ADMIN'}"
+                class="btn btn-primary btn-new"
+                data-bs-toggle="modal"
+                data-bs-target="#createProjectModal">
             + Новый проект
         </button>
     </div>
@@ -45,10 +49,11 @@
                         <p class="text-muted" th:text="${project.description} ?: 'Без описания'"></p>
                     </div>
                     <div class="mt-3 d-flex justify-content-between align-items-center">
-                        <a th:href="@{'/projects/' + ${project.id} + '/board'}" class="btn btn-sm btn-outline-primary">
+                        <a th:href="@{'/projects/' + ${project.id} + '/board'}"
+                           class="btn btn-sm btn-outline-primary">
                             Открыть доску
                         </a>
-                        <!-- Кнопка удаления только для ADMIN -->
+                        <!-- Удаление только для ADMIN -->
                         <form th:if="${role == 'ADMIN'}"
                               th:action="@{'/projects/' + ${project.id} + '/delete'}"
                               method="post" style="display:inline;">
@@ -62,8 +67,8 @@
     </div>
 </div>
 
-<!-- Модальное окно создания проекта -->
-<div class="modal fade" id="createProjectModal" tabindex="-1">
+<!-- Модальное окно создания проекта (ADMIN) -->
+<div class="modal fade" id="createProjectModal" tabindex="-1" th:if="${role == 'ADMIN'}">
     <div class="modal-dialog">
         <form th:action="@{/projects}" method="post">
             <div class="modal-content">

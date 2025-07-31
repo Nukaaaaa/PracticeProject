@@ -19,7 +19,7 @@ public class Column {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
-    private String wipLimit;
+    private Integer wipLimit;
 
     @ManyToOne
     @JoinColumn(name = "project_id")

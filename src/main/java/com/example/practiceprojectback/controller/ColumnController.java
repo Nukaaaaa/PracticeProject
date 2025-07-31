@@ -26,7 +26,7 @@ public class ColumnController {
         Column column = new Column();
         column.setName(name);
         column.setProject(project);
-        column.setWipLimit(wipLimit != null ? String.valueOf(wipLimit) : null);
+        column.setWipLimit(wipLimit);
 
         columnService.createColumn(column);
 

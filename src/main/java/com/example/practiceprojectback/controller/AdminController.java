@@ -14,11 +14,11 @@ import java.util.List;
 public class AdminController {
 
     private final UserService userService;
-    private final TaskService taskService;
+//    private final TaskService taskService;
 
     public AdminController(UserService userService, TaskService taskService) {
         this.userService = userService;
-        this.taskService = taskService;
+//        this.taskService = taskService;
     }
 
     @GetMapping("/dashboard")
@@ -61,10 +61,10 @@ public class AdminController {
     // Отчет
     @GetMapping("/reports")
     public String showReports(Model model) {
-        model.addAttribute("totalTasks", taskService.countAllTasks());
-        model.addAttribute("completedTasks", taskService.countTasksByStatus("DONE"));
-        model.addAttribute("inProgressTasks", taskService.countTasksByStatus("IN_PROGRESS"));
-        model.addAttribute("openTasks", taskService.countTasksByStatus("CREATED"));
+//        model.addAttribute("totalTasks", taskService.countAllTasks());
+//        model.addAttribute("completedTasks", taskService.countTasksByStatus("DONE"));
+//        model.addAttribute("inProgressTasks", taskService.countTasksByStatus("IN_PROGRESS"));
+//        model.addAttribute("openTasks", taskService.countTasksByStatus("CREATED"));
 
 
         model.addAttribute("totalUsers", userService.countUsers());

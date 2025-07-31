@@ -32,6 +32,8 @@ public class SecurityConfig {
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
+                ).csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/tasks/*/move")
                 );
 
         return http.build();

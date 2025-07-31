@@ -3,6 +3,7 @@ package com.example.practiceprojectback.controller;
 import com.example.practiceprojectback.model.Task;
 import com.example.practiceprojectback.model.User;
 import com.example.practiceprojectback.repository.UserRepository;
+import com.example.practiceprojectback.service.ColumnService;
 import com.example.practiceprojectback.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -18,118 +19,88 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+    private final ColumnService columnService;
     private final UserRepository userRepository;
 
-    @GetMapping
-    public String showTasksPage(@RequestParam(value = "category", required = false) String category,
-                                Model model,
-                                Authentication authentication) {
-
-        String username = authentication.getName();
-        User user = userRepository.findByName(username);
-
-        List<Task> tasks;
-        if ("ADMIN".equals(user.getRole())) {
-            tasks = (category != null && !category.isEmpty())
-                    ? taskService.getTasksByCategory(category)
-                    : taskService.getAllTasks();
-        } else {
-            tasks = (category != null && !category.isEmpty())
-                    ? taskService.getTasksByCategoryAndUserId(category, user.getId())
-                    : taskService.getTasksByUserId(user.getId());
-        }
-
-        model.addAttribute("tasks", tasks);
-        model.addAttribute("categories", List.of("Work", "Study", "Personal"));
-        model.addAttribute("selectedCategory", category);
-        model.addAttribute("task", new Task());
-        model.addAttribute("user", user);
-        model.addAttribute("role", user.getRole());
-        model.addAttribute("statuses", List.of("CREATED", "IN_PROGRESS", "DONE"));
-
-        return "tasks";
-    }
-
+    // ✅ Создание задачи
     @PostMapping
     public String createTask(@ModelAttribute Task task,
                              @RequestParam Long columnId,
+                             @RequestParam(required = false) List<Long> tagIds,
                              Authentication authentication) {
         User user = userRepository.findByName(authentication.getName());
         task.setUser(user);
 
-        taskService.createTask(task, columnId);
+        Task savedTask = taskService.createTask(task, columnId, tagIds);
 
-        // после добавления вернуться на Kanban доску
-        return "redirect:/projects/" + task.getColumn().getProject().getId() + "/board";
+        return "redirect:/projects/" + savedTask.getColumn().getProject().getId() + "/board";
     }
 
-
+    // ✅ Форма редактирования задачи
     @GetMapping("/edit/{id}")
     public String showEditTaskForm(@PathVariable Long id, Model model, Authentication authentication) {
         User user = userRepository.findByName(authentication.getName());
         Task task = taskService.getTaskById(id);
 
         if (!"ADMIN".equals(user.getRole()) && !task.getUser().getId().equals(user.getId())) {
-            return "redirect:/tasks?error=forbidden";
+            return "redirect:/projects/" + task.getColumn().getProject().getId() + "/board?error=forbidden";
         }
 
-        model.addAttribute("categories", List.of("Work", "Study", "Personal"));
+        // ✅ получаем все колонки проекта задачи
+        Long projectId = task.getColumn().getProject().getId();
+        model.addAttribute("columns", columnService.getColumnsByProject(projectId));
+
         model.addAttribute("task", task);
         return "edit-task";
     }
 
+
+    // ✅ Обновление задачи
     @PostMapping("/edit/{id}")
     public String updateTask(@PathVariable Long id,
                              @ModelAttribute Task updatedTask,
                              Authentication authentication) {
         User user = userRepository.findByName(authentication.getName());
 
-        Task task = taskService.getTaskById(id);
+        Task existingTask = taskService.getTaskById(id);
 
-        if (!"ADMIN".equals(user.getRole()) && !task.getUser().getId().equals(user.getId())) {
-            return "redirect:/tasks?error=forbidden";
+        if (!"ADMIN".equals(user.getRole()) && !existingTask.getUser().getId().equals(user.getId())) {
+            return "redirect:/projects/" + existingTask.getColumn().getProject().getId() + "/board?error=forbidden";
         }
 
-        taskService.updateTask(id, updatedTask);
-        return "redirect:/tasks";
+        Task savedTask = taskService.updateTask(id, updatedTask);
+
+        // ✅ вместо того чтобы дергать у Task → Column → Project
+        // берем projectId напрямую через колонку из базы
+        Long projectId = savedTask.getColumn()
+                .getProject()
+                .getId();
+
+        return "redirect:/projects/" + projectId + "/board";
     }
 
+
+    // ✅ Удаление задачи
     @PostMapping("/delete/{id}")
     public String deleteTask(@PathVariable Long id, Authentication authentication) {
         User user = userRepository.findByName(authentication.getName());
-
         Task task = taskService.getTaskById(id);
 
         if (!"ADMIN".equals(user.getRole()) && !task.getUser().getId().equals(user.getId())) {
-            return "redirect:/tasks?error=forbidden";
+            return "redirect:/projects/" + task.getColumn().getProject().getId() + "/board?error=forbidden";
         }
 
+        Long projectId = task.getColumn().getProject().getId();
         taskService.deleteTask(id);
-        return "redirect:/tasks";
+
+        return "redirect:/projects/" + projectId + "/board";
     }
 
-    @PostMapping("/status/{id}")
-    @ResponseBody
-    public String updateTaskStatus(@PathVariable Long id,
-                                   @RequestParam("status") String status,
-                                   Authentication authentication) {
-        User user = userRepository.findByName(authentication.getName());
-
-        Task task = taskService.getTaskById(id);
-
-        if (!"ADMIN".equals(user.getRole()) && !task.getUser().getId().equals(user.getId())) {
-            return "FORBIDDEN";
-        }
-
-        taskService.updateTaskStatus(id, status);
-        return "OK";
-    }
-
+    // ✅ Drag & Drop
     @PostMapping("/{id}/move")
     @ResponseBody
     public String moveTask(@PathVariable Long id, @RequestParam Long columnId) {
         taskService.moveTaskToColumn(id, columnId);
         return "OK";
     }
-
 }

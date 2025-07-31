@@ -17,28 +17,31 @@
         .kanban-column {
             background: #ffffff;
             min-width: 300px;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
-        .kanban-header {
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
+        .kanban-header { font-weight: 600; margin-bottom: 10px; }
         .task-card {
             background: #fff;
-            border-radius: 10px;
-            padding: 10px;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             cursor: grab;
-        }
-        .task-card:hover {
-            transform: translateY(-2px);
             transition: transform 0.2s;
         }
+        .task-card:hover { transform: translateY(-2px); }
+        .badge-status {
+            font-size: 0.75rem;
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+        .badge-created { background-color: #0d6efd; color: white; }
+        .badge-progress { background-color: #fd7e14; color: white; }
+        .badge-done { background-color: #198754; color: white; }
     </style>
 </head>
 <body class="container mt-4">
@@ -48,33 +51,32 @@
     <h2 th:text="'Проект: ' + ${project.name}"></h2>
     <div>
         <a href="/projects" class="btn btn-outline-secondary me-2">← Все проекты</a>
-        <a th:href="@{'/tags/project/' + ${project.id}}" class="btn btn-outline-primary">
-            Теги проекта
-        </a>
+        <a th:href="@{'/tags/project/' + ${project.id}}" class="btn btn-outline-primary">Теги проекта</a>
     </div>
 </div>
 
-<!-- Кнопка добавления колонки -->
-<div class="mb-3">
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createColumnModal">
-        + Добавить колонку
-    </button>
+<!-- Кнопка добавления колонки (только ADMIN) -->
+<div class="mb-3" th:if="${role == 'ADMIN'}">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createColumnModal">+ Добавить колонку</button>
 </div>
 
 <!-- Канбан-доска -->
 <div class="board-container">
     <div th:each="column : ${columns}" class="kanban-column"
-         th:attr="ondrop=|drop(event, ${column.id})|"
+         th:attr="ondrop=|drop(event, ${column.id}, ${column.wipLimit})|, data-wip=${column.wipLimit}"
          ondragover="allowDrop(event)">
-
+        <!-- Заголовок колонки -->
         <div class="kanban-header d-flex justify-content-between align-items-center">
             <span>
                 <span th:text="${column.name}"></span>
-                <small class="text-muted" th:if="${column.wipLimit != null}">
-                    (лимит: <span th:text="${column.wipLimit}"></span>)
+                <small class="text-muted">
+                    (<span th:text="${#lists.size(column.tasks)}"></span>
+                    <span th:if="${column.wipLimit != null}"> / <span th:text="${column.wipLimit}"></span></span>)
                 </small>
             </span>
-            <form th:action="@{'/columns/' + ${column.id} + '/delete'}" method="post" style="display:inline;">
+            <form th:if="${role == 'ADMIN'}"
+                  th:action="@{'/columns/' + ${column.id} + '/delete'}"
+                  method="post" style="display:inline;">
                 <input type="hidden" name="projectId" th:value="${project.id}">
                 <button type="submit" class="btn btn-sm btn-outline-danger"
                         onclick="return confirm('Удалить колонку?')">
@@ -83,14 +85,26 @@
             </form>
         </div>
 
-        <!-- Список задач -->
+        <!-- Задачи -->
         <div th:each="task : ${column.tasks}" class="task-card"
              th:id="'task-' + ${task.id}" draggable="true" ondragstart="drag(event)">
-            <strong th:text="${task.title}"></strong>
+            <div class="d-flex justify-content-between align-items-center">
+                <strong th:text="${task.title}"></strong>
+            </div>
             <p th:text="${task.description}"></p>
+
+            <!-- Теги -->
+            <div class="mb-2">
+                <div th:each="taskTag : ${task.taskTags}">
+                    <span class="badge me-1"
+                          th:style="'background-color:' + ${taskTag.tag.color}"
+                          th:text="${taskTag.tag.name}"></span>
+                </div>
+            </div>
+
             <small class="text-muted">Автор: <span th:text="${task.user.name}"></span></small>
 
-            <div class="mt-2 d-flex justify-content-between">
+            <div class="mt-2 d-flex justify-content-between" th:if="${role == 'ADMIN'}">
                 <a th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-pencil-square"></i>
                 </a>
@@ -103,17 +117,21 @@
             </div>
         </div>
 
-        <!-- Кнопка добавления задачи -->
-        <button class="btn btn-sm btn-success mt-2" data-bs-toggle="modal"
+        <!-- Добавление задачи (с проверкой лимита) -->
+        <button th:if="${role == 'ADMIN'}"
+                class="btn btn-sm btn-success mt-2"
+                data-bs-toggle="modal"
                 data-bs-target="#createTaskModal"
-                th:attr="data-column-id=${column.id}">
+                th:attr="data-column-id=${column.id}"
+                th:disabled="${column.wipLimit != null and #lists.size(column.tasks) >= column.wipLimit}"
+                th:title="${column.wipLimit != null and #lists.size(column.tasks) >= column.wipLimit ? 'Лимит задач достигнут' : 'Добавить задачу'}">
             + Задача
         </button>
     </div>
 </div>
 
 <!-- Модалка создания колонки -->
-<div class="modal fade" id="createColumnModal" tabindex="-1">
+<div class="modal fade" id="createColumnModal" tabindex="-1" th:if="${role == 'ADMIN'}">
     <div class="modal-dialog">
         <form th:action="@{/columns/project/{projectId}(projectId=${project.id})}" method="post">
             <div class="modal-content">
@@ -124,7 +142,6 @@
                 <div class="modal-body">
                     <input type="text" name="name" class="form-control mb-2" placeholder="Название колонки" required>
                     <input type="number" name="wipLimit" class="form-control mb-2" placeholder="WIP лимит (необязательно)">
-                    <input type="hidden" name="projectId" th:value="${project.id}">
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-success">Создать</button>
@@ -135,7 +152,7 @@
 </div>
 
 <!-- Модалка создания задачи -->
-<div class="modal fade" id="createTaskModal" tabindex="-1">
+<div class="modal fade" id="createTaskModal" tabindex="-1" th:if="${role == 'ADMIN'}">
     <div class="modal-dialog">
         <form th:action="@{/tasks}" method="post">
             <div class="modal-content">
@@ -159,21 +176,61 @@
 <script>
     let dragged;
 
-    function allowDrop(ev) { ev.preventDefault(); }
-
-    function drag(ev) { dragged = ev.target; }
-
-    function drop(ev, columnId) {
+    function allowDrop(ev) {
         ev.preventDefault();
-        ev.target.closest('.kanban-column').appendChild(dragged);
+    }
 
+    function drag(ev) {
+        dragged = ev.target;
+    }
+
+    function drop(ev, columnId, wipLimit) {
+        ev.preventDefault();
+        const columnEl = ev.target.closest('.kanban-column');
         const taskId = dragged.id.split('-')[1];
+        const currentTasks = columnEl.querySelectorAll('.task-card').length;
+
+        if (wipLimit && currentTasks >= wipLimit) {
+            alert("Лимит задач в колонке достигнут!");
+            return;
+        }
+
+        columnEl.appendChild(dragged);
 
         fetch(`/tasks/${taskId}/move?columnId=${columnId}`, { method: 'POST' })
-            .then(res => { if (!res.ok) alert("Ошибка при обновлении"); });
+            .then(res => {
+                if (!res.ok) {
+                    alert("Ошибка при обновлении");
+                    return;
+                }
+                updateColumnState(columnEl, wipLimit);
+            });
+    }
+
+    function updateColumnState(columnEl, wipLimit) {
+        const addButton = columnEl.querySelector("button[data-column-id]");
+        if (!addButton) return;
+
+        const taskCount = columnEl.querySelectorAll('.task-card').length;
+        const counter = columnEl.querySelector('.kanban-header small span');
+
+        if (counter) counter.textContent = taskCount;
+
+        if (wipLimit && taskCount >= wipLimit) {
+            addButton.disabled = true;
+            addButton.title = "Лимит задач достигнут";
+        } else {
+            addButton.disabled = false;
+            addButton.title = "Добавить задачу";
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            const wip = col.getAttribute('data-wip');
+            updateColumnState(col, wip ? parseInt(wip) : null);
+        });
+
         document.querySelectorAll('[data-column-id]').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.getElementById('taskColumnId').value = this.getAttribute('data-column-id');

@@ -36,6 +36,8 @@ public class TagController {
     // 📌 Добавить тег
     @PostMapping("/project/{projectId}")
     public String createTag(@PathVariable Long projectId, @ModelAttribute Tag tag) {
+        Project project = projectService.getProjectById(projectId);
+        tag.setProject(project); // <-- устанавливаем проект
         tagService.createTag(tag);
         return "redirect:/tags/project/" + projectId;
     }
