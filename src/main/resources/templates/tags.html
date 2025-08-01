@@ -45,8 +45,20 @@
 </div>
 
 <div th:each="tag : ${tags}" class="tag-card">
-    <span th:text="${tag.name}"></span>
-    <span class="badge ms-2" th:style="'background-color:' + ${tag.color}" th:text="${tag.name}"></span>
+    <div>
+        <span th:text="${tag.name}"></span>
+        <span class="badge ms-2" th:style="'background-color:' + ${tag.color}" th:text="${tag.name}"></span>
+    </div>
+
+    <!-- Удаление тега -->
+    <form th:action="@{'/tags/' + ${tag.id} + '/delete'}"
+          method="post" class="m-0">
+        <input type="hidden" name="projectId" th:value="${project.id}">
+        <button type="submit" class="btn btn-sm btn-outline-danger"
+                onclick="return confirm('Удалить тег?')">
+            Удалить
+        </button>
+    </form>
 </div>
 
 <!-- Добавление нового тега -->
@@ -55,6 +67,7 @@
     <form th:action="@{'/tags/project/' + ${project.id}}" method="post">
         <input type="text" name="name" class="form-control mb-3" placeholder="Название тега" required>
         <input type="hidden" name="projectId" th:value="${projectId}">
+
         <!-- Выбор цвета -->
         <label for="color">Выберите цвет:</label>
         <select id="color" name="color" class="form-select mb-3" required>

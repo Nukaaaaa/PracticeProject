@@ -16,6 +16,11 @@ public class CommentService {
         return commentRepository.findByTaskId(taskId);
     }
 
+    public Comment getCommentById(Long id) {
+        return commentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Комментарий не найден"));
+    }
+
     public Comment addComment(Comment comment) {
         return commentRepository.save(comment);
     }

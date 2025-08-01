@@ -7,32 +7,53 @@
 </head>
 <body class="container mt-5">
 
-<h2>Редактирование задачи</h2>
+<h2 class="mb-4">Редактирование задачи</h2>
 
 <form th:action="@{'/tasks/edit/' + ${task.id}}" th:object="${task}" method="post">
+
+    <!-- Заголовок -->
     <div class="mb-3">
         <label class="form-label">Заголовок</label>
         <input type="text" class="form-control" th:field="*{title}" required>
     </div>
 
+    <!-- Описание -->
     <div class="mb-3">
         <label class="form-label">Описание</label>
         <textarea class="form-control" th:field="*{description}" rows="4"></textarea>
     </div>
 
+    <!-- Колонка -->
     <div class="mb-3">
-        <label class="form-label">Переместить в колонку</label>
-        <select th:field="*{column.id}" class="form-select">
-        <option th:each="col : ${columns}"
-                th:value="${col.id}"
-                th:text="${col.name}">
-        </option>
-    </select>
-
+        <label class="form-label">Колонка</label>
+        <select name="column.id" class="form-select">
+            <option th:each="col : ${columns}"
+                    th:value="${col.id}"
+                    th:selected="${task.column != null and task.column.id == col.id}"
+                    th:text="${col.name}">
+            </option>
+        </select>
     </div>
 
-    <button type="submit" class="btn btn-success">Сохранить</button>
-    <a th:href="@{'/projects/' + ${task.column.project.id} + '/board'}" class="btn btn-secondary">Назад</a>
+    <!-- Теги -->
+    <div class="mb-3">
+        <label class="form-label">Теги</label>
+        <select name="tagIds" class="form-select" multiple>
+            <option th:each="tag : ${tags}"
+                    th:value="${tag.id}"
+                    th:selected="${task.taskTags != null and #lists.contains(task.taskTags.![tag.id], tag.id)}"
+                    th:text="${tag.name}">
+            </option>
+        </select>
+        <small class="text-muted">Можно выбрать несколько тегов</small>
+    </div>
+
+    <!-- Кнопки -->
+    <div class="mt-3">
+        <button type="submit" class="btn btn-success">Сохранить</button>
+        <a th:href="@{'/projects/' + ${task.column.project.id} + '/board'}" class="btn btn-secondary">Назад</a>
+    </div>
+
 </form>
 
 </body>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
 <head>
     <meta charset="UTF-8">
     <title>Комментарии</title>
@@ -24,7 +24,9 @@
 
 <!-- Навигация -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <a href="/tasks" class="btn btn-outline-secondary">← Назад к задачам</a>
+    <a th:href="@{'/projects/' + ${task.column.project.id} + '/board'}" class="btn btn-outline-secondary">
+        ← Назад к доске
+    </a>
 </div>
 
 <!-- Заголовок -->
@@ -37,17 +39,18 @@
     Комментариев пока нет. Будьте первым!
 </div>
 
-<div th:each="comment : ${comments}" class="comment-card">
-    <p th:text="${comment.content}"></p> <!-- исправлено -->
-    <p class="author">
+<div th:each="comment : ${comments}" class="mb-3 p-2 border rounded">
+    <p th:text="${comment.content}"></p>
+    <small class="text-muted">
         Автор: <span th:text="${comment.author != null ? comment.author.name : 'Аноним'}"></span>
-    </p>
+    </small>
 
-    <form th:action="@{'/comments/' + ${comment.id} + '/delete'}" method="post">
+    <form th:if="${role == 'ADMIN' or (comment.author != null and comment.author.id == user.id)}"
+          th:action="@{'/comments/' + ${comment.id} + '/delete'}"
+          method="post" class="mt-1">
         <input type="hidden" name="taskId" th:value="${task.id}">
-        <button class="btn btn-sm btn-outline-danger" type="submit"
-                onclick="return confirm('Удалить комментарий?')">
-            Удалить
+        <button type="submit" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-trash"></i> Удалить
         </button>
     </form>
 </div>

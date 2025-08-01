@@ -9,6 +9,8 @@ import com.example.practiceprojectback.repository.TagRepository;
 import com.example.practiceprojectback.repository.TaskRepository;
 import com.example.practiceprojectback.repository.TaskTagRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -33,12 +35,12 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
     }
 
-    // ✅ Создание задачи с проверкой WIP и тегами
+    // ✅ Создание задачи с тегами
+    @Transactional
     public Task createTask(Task task, Long columnId, List<Long> tagIds) {
         Column column = columnRepository.findById(columnId)
                 .orElseThrow(() -> new RuntimeException("Column not found with id: " + columnId));
 
-        // Проверка WIP лимита
         if (column.getWipLimit() != null) {
             long taskCount = taskRepository.countByColumnId(columnId);
             if (taskCount >= column.getWipLimit()) {
@@ -50,7 +52,7 @@ public class TaskService {
         Task savedTask = taskRepository.save(task);
 
         // Привязка тегов
-        if (tagIds != null) {
+        if (tagIds != null && !tagIds.isEmpty()) {
             for (Long tagId : tagIds) {
                 Tag tag = tagRepository.findById(tagId)
                         .orElseThrow(() -> new RuntimeException("Tag not found with id: " + tagId));
@@ -65,7 +67,8 @@ public class TaskService {
     }
 
     // ✅ Обновление задачи + теги
-    public Task updateTask(Long id, Task updatedTask) {
+    @Transactional
+    public Task updateTask(Long id, Task updatedTask, List<Long> tagIds) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
@@ -78,9 +81,23 @@ public class TaskService {
             task.setColumn(column);
         }
 
+        // Удаляем старые связи тегов
+        taskTagRepository.deleteByTaskId(task.getId());
+
+        // Добавляем новые теги
+        if (tagIds != null && !tagIds.isEmpty()) {
+            for (Long tagId : tagIds) {
+                Tag tag = tagRepository.findById(tagId)
+                        .orElseThrow(() -> new RuntimeException("Tag not found with id: " + tagId));
+                TaskTag taskTag = new TaskTag();
+                taskTag.setTask(task);
+                taskTag.setTag(tag);
+                taskTagRepository.save(taskTag);
+            }
+        }
+
         return taskRepository.save(task);
     }
-
 
     public void deleteTask(Long id) {
         taskTagRepository.deleteByTaskId(id);
@@ -88,6 +105,7 @@ public class TaskService {
     }
 
     // ✅ Перенос задачи в другую колонку
+    @Transactional
     public void moveTaskToColumn(Long taskId, Long columnId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Задача не найдена"));

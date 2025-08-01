@@ -2,6 +2,7 @@ package com.example.practiceprojectback.controller;
 
 import com.example.practiceprojectback.model.Task;
 import com.example.practiceprojectback.model.User;
+import com.example.practiceprojectback.repository.TagRepository;
 import com.example.practiceprojectback.repository.UserRepository;
 import com.example.practiceprojectback.service.ColumnService;
 import com.example.practiceprojectback.service.TaskService;
@@ -21,6 +22,7 @@ public class TaskController {
     private final TaskService taskService;
     private final ColumnService columnService;
     private final UserRepository userRepository;
+    private final TagRepository tagRepository;
 
     // ✅ Создание задачи
     @PostMapping
@@ -46,39 +48,31 @@ public class TaskController {
             return "redirect:/projects/" + task.getColumn().getProject().getId() + "/board?error=forbidden";
         }
 
-        // ✅ получаем все колонки проекта задачи
         Long projectId = task.getColumn().getProject().getId();
         model.addAttribute("columns", columnService.getColumnsByProject(projectId));
-
+        model.addAttribute("tags", tagRepository.findByProjectId(projectId));
         model.addAttribute("task", task);
         return "edit-task";
     }
-
 
     // ✅ Обновление задачи
     @PostMapping("/edit/{id}")
     public String updateTask(@PathVariable Long id,
                              @ModelAttribute Task updatedTask,
+                             @RequestParam(required = false) List<Long> tagIds,
                              Authentication authentication) {
         User user = userRepository.findByName(authentication.getName());
-
         Task existingTask = taskService.getTaskById(id);
 
         if (!"ADMIN".equals(user.getRole()) && !existingTask.getUser().getId().equals(user.getId())) {
             return "redirect:/projects/" + existingTask.getColumn().getProject().getId() + "/board?error=forbidden";
         }
 
-        Task savedTask = taskService.updateTask(id, updatedTask);
-
-        // ✅ вместо того чтобы дергать у Task → Column → Project
-        // берем projectId напрямую через колонку из базы
-        Long projectId = savedTask.getColumn()
-                .getProject()
-                .getId();
+        Task savedTask = taskService.updateTask(id, updatedTask, tagIds);
+        Long projectId = savedTask.getColumn().getProject().getId();
 
         return "redirect:/projects/" + projectId + "/board";
     }
-
 
     // ✅ Удаление задачи
     @PostMapping("/delete/{id}")

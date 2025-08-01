@@ -20,7 +20,10 @@ public class TagService {
         return tagRepository.save(tag);
     }
 
+    // удаление с каскадом
     public void deleteTag(Long id) {
-        tagRepository.deleteById(id);
+        Tag tag = tagRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Тег не найден"));
+        tagRepository.delete(tag);
     }
 }

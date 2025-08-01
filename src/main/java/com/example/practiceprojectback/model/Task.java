@@ -30,5 +30,7 @@ public class Task {
     private Column column; // статус определяется колонкой
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TaskTag> taskTags; // гибкая замена category
+    private List<TaskTag> taskTags; // гибкая замена categoryэ
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments;
 }
