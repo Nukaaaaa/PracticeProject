@@ -23,8 +23,8 @@ public class UserController {
     public String profile(Model model, Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            User user = userService.findByName(userDetails.getUsername());
-            model.addAttribute("user", user);
+            User user = userService.findByEmail(userDetails.getUsername());
+            model.addAttribute("user",user);
             return "profile"; // profile.html
         } else {
             return "redirect:/login?error";
@@ -37,7 +37,7 @@ public class UserController {
                                 Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            User user = userService.findByName(userDetails.getUsername());
+            User user = userService.findByEmail(userDetails.getUsername());
 
             // обновляем имя
             user.setName(updatedUser.getName());

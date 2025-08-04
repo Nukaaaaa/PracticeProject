@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -29,8 +30,26 @@ public class TaskController {
     public String createTask(@ModelAttribute Task task,
                              @RequestParam Long columnId,
                              @RequestParam(required = false) List<Long> tagIds,
+                             @RequestParam(required = false) Long userId,
                              Authentication authentication) {
-        User user = userRepository.findByName(authentication.getName());
+
+        User user = null;
+
+        // ✅ Если админ выбрал пользователя
+        if (userId != null) {
+            user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        }
+        // ✅ Иначе берем текущего
+        else if (authentication != null) {
+            user = userRepository.findByEmail(authentication.getName());
+        }
+
+        // ✅ Если и тут user == null → выкидываем ошибку
+        if (user == null) {
+            throw new RuntimeException("Не удалось определить пользователя для задачи!");
+        }
+
         task.setUser(user);
 
         Task savedTask = taskService.createTask(task, columnId, tagIds);
@@ -38,10 +57,11 @@ public class TaskController {
         return "redirect:/projects/" + savedTask.getColumn().getProject().getId() + "/board";
     }
 
+
     // ✅ Форма редактирования задачи
     @GetMapping("/edit/{id}")
     public String showEditTaskForm(@PathVariable Long id, Model model, Authentication authentication) {
-        User user = userRepository.findByName(authentication.getName());
+        User user = userRepository.findByEmail(authentication.getName());
         Task task = taskService.getTaskById(id);
 
         if (!"ADMIN".equals(user.getRole()) && !task.getUser().getId().equals(user.getId())) {
@@ -61,7 +81,7 @@ public class TaskController {
                              @ModelAttribute Task updatedTask,
                              @RequestParam(required = false) List<Long> tagIds,
                              Authentication authentication) {
-        User user = userRepository.findByName(authentication.getName());
+        User user = userRepository.findByEmail(authentication.getName());
         Task existingTask = taskService.getTaskById(id);
 
         if (!"ADMIN".equals(user.getRole()) && !existingTask.getUser().getId().equals(user.getId())) {
@@ -77,7 +97,7 @@ public class TaskController {
     // ✅ Удаление задачи
     @PostMapping("/delete/{id}")
     public String deleteTask(@PathVariable Long id, Authentication authentication) {
-        User user = userRepository.findByName(authentication.getName());
+        User user = userRepository.findByEmail(authentication.getName());
         Task task = taskService.getTaskById(id);
 
         if (!"ADMIN".equals(user.getRole()) && !task.getUser().getId().equals(user.getId())) {
@@ -97,4 +117,14 @@ public class TaskController {
         taskService.moveTaskToColumn(id, columnId);
         return "OK";
     }
+
+    @GetMapping("/reports/project/{projectId}")
+    public String getProjectReport(@PathVariable Long projectId, Model model) {
+        Map<String, Long> columnStats = taskService.countTasksByColumns(projectId);
+        model.addAttribute("columnStats", columnStats);
+        model.addAttribute("totalTasks", columnStats.values().stream().mapToLong(Long::longValue).sum());
+        return "admin/reports :: projectReport"; // Возвращаем фрагмент из Thymeleaf шаблона
+    }
+
+
 }

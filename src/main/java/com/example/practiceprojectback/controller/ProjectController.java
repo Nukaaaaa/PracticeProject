@@ -32,15 +32,25 @@ public class ProjectController {
         model.addAttribute("project", new Project()); // для формы создания
 
         if (authentication != null) {
-            User currentUser = userService.findByName(authentication.getName());
-            model.addAttribute("role", currentUser.getRole()); // ✅ передаем роль
-            model.addAttribute("user", currentUser);
+            // 🔍 Проверим, что вернёт Spring Security
+            System.out.println("⚡ Authentication name: " + authentication.getName());
+
+            User currentUser = userService.findByEmail(authentication.getName());
+            if (currentUser != null) {
+                model.addAttribute("role", currentUser.getRole());
+                model.addAttribute("user", currentUser);
+            } else {
+                System.out.println("⚠️ Пользователь не найден по email: " + authentication.getName());
+                model.addAttribute("role", "USER");
+            }
         } else {
-            model.addAttribute("role", "USER"); // по умолчанию
+            model.addAttribute("role", "USER");
         }
 
-        return "project/list"; // project/list.html
+        return "project/list";
     }
+
+
 
     // 📌 Kanban-доска проекта
     @GetMapping("/{id}/board")
@@ -48,17 +58,26 @@ public class ProjectController {
         Project project = projectService.getProjectById(id);
         model.addAttribute("project", project);
         model.addAttribute("columns", columnService.getColumnsByProject(id));
-        model.addAttribute("tags",tagService.getTagsByProject(id));
+        model.addAttribute("tags", tagService.getTagsByProject(id));
 
         if (authentication != null) {
-            User currentUser = userService.findByName(authentication.getName());
-            model.addAttribute("role", currentUser.getRole()); // ✅ роль в модель
-            model.addAttribute("user", currentUser);
+            System.out.println("⚡ Authentication name: " + authentication.getName());
+
+            User currentUser = userService.findByEmail(authentication.getName());
+            if (currentUser != null) {
+                model.addAttribute("role", currentUser.getRole());
+                model.addAttribute("user", currentUser);
+            } else {
+                System.out.println("⚠️ Пользователь не найден по email: " + authentication.getName());
+                model.addAttribute("role", "USER");
+                model.addAttribute("user", null); // 👈 обязательно добавь
+            }
         } else {
             model.addAttribute("role", "USER");
+            model.addAttribute("user", null); // 👈 добавляем user в любом случае
         }
 
-        return "project/board"; // project/board.html
+        return "project/board";
     }
 
     // 📌 Создать проект с привязкой к текущему пользователю

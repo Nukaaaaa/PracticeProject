@@ -36,7 +36,7 @@ public class CommentController {
         model.addAttribute("comment", new Comment()); // форма добавления
 
         if (authentication != null) {
-            User currentUser = userService.findByName(authentication.getName());
+            User currentUser = userService.findByEmail(authentication.getName());
             model.addAttribute("user", currentUser);
             model.addAttribute("role", currentUser.getRole());
         } else {
@@ -53,7 +53,7 @@ public class CommentController {
                              @ModelAttribute Comment comment,
                              Authentication authentication) {
         Task task = taskService.getTaskById(taskId);
-        User currentUser = userService.findByName(authentication.getName());
+        User currentUser = userService.findByEmail(authentication.getName());
         comment.setTask(task);
         comment.setAuthor(currentUser); // ✅ фикс: сохраняем автора
 
@@ -66,7 +66,7 @@ public class CommentController {
     public String deleteComment(@PathVariable Long id,
                                 @RequestParam Long taskId,
                                 Authentication authentication) {
-        User currentUser = userService.findByName(authentication.getName());
+        User currentUser = userService.findByEmail(authentication.getName());
         Comment comment = commentService.getCommentById(id); // ✅ вместо списка берем один
 
         // Проверка прав

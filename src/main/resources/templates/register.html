@@ -14,10 +14,17 @@
                     <label class="form-label">Имя</label>
                     <input type="text" name="name" class="form-control" required />
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" required />
+                    <div th:if="${error}" class="text-danger mt-1">
+                        <p th:text="${error}"></p>
+                    </div>
+                </div>
 
                 <div class="mb-3">
                     <label class="form-label">Пароль</label>
-                    <input type="password" name="password" class="form-control" required />
+                    <input type="password" name="password" class="form-control" required minlength="6"/>
                 </div>
                 <button type="submit" class="btn btn-success w-100">Зарегистрироваться</button>
                 <div class="text-center mt-3">

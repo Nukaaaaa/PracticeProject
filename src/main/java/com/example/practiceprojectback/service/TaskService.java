@@ -11,7 +11,9 @@ import com.example.practiceprojectback.repository.TaskTagRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TaskService {
@@ -121,5 +123,14 @@ public class TaskService {
 
         task.setColumn(column);
         taskRepository.save(task);
+    }
+    public Map<String, Long> countTasksByColumns(Long projectId) {
+        List<Column> columns = columnRepository.findByProjectId(projectId);
+        Map<String, Long> stats = new LinkedHashMap<>();
+        for (Column col : columns) {
+            long count = taskRepository.countByColumnId(col.getId());
+            stats.put(col.getName(), count);
+        }
+        return stats;
     }
 }

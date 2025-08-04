@@ -9,9 +9,11 @@ import java.util.List;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
      User findByName(String name);
+     User findByEmail(String email);
 
-     long countByRole(String role); // ✅ для countUsersByRole
+     boolean existsByEmail (String email);
+     long countByRole(String role);
 
-     List<User> findTop5ByOrderByIdDesc(); // ✅ для getTop5Users
+     List<User> findTop5ByOrderByIdDesc();
 }
 

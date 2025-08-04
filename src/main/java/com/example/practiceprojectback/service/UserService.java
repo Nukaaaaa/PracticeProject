@@ -30,6 +30,9 @@ public class UserService {
     public User findByName(String name) {
         return userRepository.findByName(name);
     }
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
 
     public User updateAdminUser(Long id, User updatedUser){
         User user = getUserById(id);

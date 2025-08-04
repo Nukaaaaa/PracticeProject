@@ -16,6 +16,11 @@ public class AuthService {
     public User register(User user) {
         user.setRole("USER");
 
+
+        if(userRepository.existsByEmail(user.getEmail())){
+            throw new RuntimeException("Email уже используется");
+        }
+
         // хэшируем пароль
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 

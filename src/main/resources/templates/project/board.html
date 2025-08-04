@@ -50,13 +50,11 @@
     <h2 th:text="'Проект: ' + ${project.name}"></h2>
     <div>
         <a href="/projects" class="btn btn-outline-secondary me-2">← Все проекты</a>
-        <!-- Кнопка "Теги проекта" показываем только админу -->
         <a th:if="${role == 'ADMIN'}"
            th:href="@{'/tags/project/' + ${project.id}}"
            class="btn btn-outline-primary">
             <i class="bi bi-tags"></i> Теги проекта
         </a>
-
     </div>
 </div>
 
@@ -99,9 +97,9 @@
         <!-- Задачи -->
         <div th:each="task : ${column.tasks}" class="task-card"
              th:id="'task-' + ${task.id}"
-             th:attr="draggable=${role == 'ADMIN' or user.id == task.user.id}"
-             th:attrappend="ondragstart=${role == 'ADMIN' or user.id == task.user.id ? 'drag(event)' : null},
-                            ondragend=${role == 'ADMIN' or user.id == task.user.id ? 'dragEnd(event)' : null}">
+             th:attr="draggable=${user != null}"
+             th:attrappend="ondragstart=${user != null ? 'drag(event)' : null},
+                    ondragend=${user != null ? 'dragEnd(event)' : null}">
 
             <div class="d-flex justify-content-between align-items-center">
                 <strong th:text="${task.title}"></strong>
@@ -117,11 +115,15 @@
                 </div>
             </div>
 
-            <small class="text-muted">Автор: <span th:text="${task.user.name}"></span></small>
+            <small class="text-muted">
+                Автор: <span th:text="${task.user != null ? task.user.name : 'Не назначен'}"></span>
+            </small>
 
             <!-- Кнопки управления задачей -->
-            <div class="mt-2 d-flex justify-content-between" >
-                <a  th:if="${role == 'ADMIN' or user.id == task.user.id}" th:href="@{'/tasks/edit/' + ${task.id}}" class="btn btn-sm btn-outline-primary">
+            <div class="mt-2 d-flex justify-content-between">
+                <a th:if="${role == 'ADMIN' or (user != null and task.user != null and user.id == task.user.id)}"
+                   th:href="@{'/tasks/edit/' + ${task.id}}"
+                   class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-pencil-square"></i>
                 </a>
 
@@ -130,7 +132,7 @@
                     <i class="bi bi-chat-dots"></i>
                 </a>
 
-                <form th:if="${role == 'ADMIN' or user.id == task.user.id}"
+                <form th:if="${role == 'ADMIN' or (user != null and task.user != null and user.id == task.user.id)}"
                       th:action="@{'/tasks/delete/' + ${task.id}}" method="post" class="m-0">
                     <button type="submit" class="btn btn-sm btn-outline-danger"
                             onclick="return confirm('Удалить задачу?')">
@@ -138,8 +140,6 @@
                     </button>
                 </form>
             </div>
-
-
         </div>
 
         <!-- Добавление задачи -->
@@ -192,13 +192,23 @@
 
                     <!-- Выбор тегов -->
                     <label class="form-label">Теги</label>
-                    <select name="tagIds" class="form-select" multiple>
+                    <select name="tagIds" class="form-select mb-2" multiple>
                         <option th:each="tag : ${tags}"
                                 th:value="${tag.id}"
                                 th:text="${tag.name}">
                         </option>
                     </select>
-                    <small class="text-muted">Удерживайте Ctrl (или Cmd на Mac), чтобы выбрать несколько тегов</small>
+
+                    <!-- Назначение пользователя (только для админа) -->
+                    <div th:if="${role == 'ADMIN'}" class="mb-3">
+                        <label class="form-label">Назначить пользователю</label>
+                        <select name="userId" class="form-select">
+                            <option th:each="u : ${users}"
+                                    th:value="${u.id}"
+                                    th:text="${u.name}">
+                            </option>
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-success">Создать</button>
@@ -208,10 +218,8 @@
     </div>
 </div>
 
-
 <script>
     let dragged;
-
     function allowDrop(ev) { ev.preventDefault(); }
     function drag(ev) { dragged = ev.target; dragged.classList.add("dragging"); }
     function dragEnd(ev) { ev.target.classList.remove("dragging"); }
@@ -222,38 +230,28 @@
         ev.preventDefault();
         const columnEl = ev.currentTarget;
         columnEl.classList.remove("drag-over");
-
         const taskId = dragged.id.split('-')[1];
         const sourceColumnEl = dragged.closest('.kanban-column');
         const currentTasks = columnEl.querySelectorAll('.task-card').length;
-
         if (wipLimit && currentTasks >= wipLimit) {
             alert("Лимит задач в колонке достигнут!");
             return;
         }
-
         columnEl.appendChild(dragged);
-
         fetch(`/tasks/${taskId}/move?columnId=${columnId}`, { method: 'POST' })
             .then(res => {
-                if (!res.ok) {
-                    alert("Ошибка при обновлении");
-                    return;
-                }
+                if (!res.ok) { alert("Ошибка при обновлении"); return; }
                 const targetWip = columnEl.getAttribute('data-wip');
                 updateColumnState(columnEl, targetWip ? parseInt(targetWip) : null);
-
                 const sourceWip = sourceColumnEl.getAttribute('data-wip');
                 updateColumnState(sourceColumnEl, sourceWip ? parseInt(sourceWip) : null);
             });
     }
-
     function updateColumnState(columnEl, wipLimit) {
         const addButton = columnEl.querySelector("button[data-column-id]");
         const taskCount = columnEl.querySelectorAll('.task-card').length;
         const counter = columnEl.querySelector('.task-count');
         if (counter) counter.textContent = taskCount;
-
         if (addButton) {
             if (wipLimit && taskCount >= wipLimit) {
                 addButton.disabled = true;
@@ -264,13 +262,11 @@
             }
         }
     }
-
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.kanban-column').forEach(col => {
             const wip = col.getAttribute('data-wip');
             updateColumnState(col, wip ? parseInt(wip) : null);
         });
-
         document.querySelectorAll('[data-column-id]').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.getElementById('taskColumnId').value = this.getAttribute('data-column-id');

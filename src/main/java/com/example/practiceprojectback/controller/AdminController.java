@@ -1,6 +1,7 @@
 package com.example.practiceprojectback.controller;
 
 import com.example.practiceprojectback.model.User;
+import com.example.practiceprojectback.service.ProjectService;
 import com.example.practiceprojectback.service.TaskService;
 import com.example.practiceprojectback.service.UserService;
 import org.springframework.stereotype.Controller;
@@ -14,13 +15,12 @@ import java.util.List;
 public class AdminController {
 
     private final UserService userService;
-//    private final TaskService taskService;
+    private final ProjectService projectService;
 
-    public AdminController(UserService userService, TaskService taskService) {
+    public AdminController(UserService userService, TaskService taskService,ProjectService projectService){
         this.userService = userService;
-//        this.taskService = taskService;
-    }
-
+        this.projectService=projectService;
+}
     @GetMapping("/dashboard")
     public String adminHome() {
         return "admin/dashboard";
@@ -59,22 +59,22 @@ public class AdminController {
     }
 
     // Отчет
-    @GetMapping("/reports")
-    public String showReports(Model model) {
-//        model.addAttribute("totalTasks", taskService.countAllTasks());
-//        model.addAttribute("completedTasks", taskService.countTasksByStatus("DONE"));
-//        model.addAttribute("inProgressTasks", taskService.countTasksByStatus("IN_PROGRESS"));
-//        model.addAttribute("openTasks", taskService.countTasksByStatus("CREATED"));
-
-
-        model.addAttribute("totalUsers", userService.countUsers());
-        model.addAttribute("adminCount", userService.countUsersByRole("ADMIN"));
-        model.addAttribute("userCount", userService.countUsersByRole("USER"));
-        model.addAttribute("recentUsers", userService.getTop5Users());
-
-
-
-        return "admin/reports";
-    }
+//    @GetMapping("/reports")
+//    public String showReports(Model model) {
+////        model.addAttribute("totalTasks", taskService.countAllTasks());
+////        model.addAttribute("completedTasks", taskService.countTasksByStatus("DONE"));
+////        model.addAttribute("inProgressTasks", taskService.countTasksByStatus("IN_PROGRESS"));
+////        model.addAttribute("openTasks", taskService.countTasksByStatus("CREATED"));
+//
+//        model.addAttribute("projects", projectService.getAllProjects());
+//        model.addAttribute("totalUsers", userService.countUsers());
+//        model.addAttribute("adminCount", userService.countUsersByRole("ADMIN"));
+//        model.addAttribute("userCount", userService.countUsersByRole("USER"));
+//        model.addAttribute("recentUsers", userService.getTop5Users());
+//
+//
+//
+//        return "admin/reports";
+//    }
 
 }

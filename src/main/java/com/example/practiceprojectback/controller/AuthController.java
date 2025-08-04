@@ -5,6 +5,7 @@ import com.example.practiceprojectback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
@@ -27,9 +28,16 @@ public class AuthController {
 
     @PostMapping("/register")
     public String register(@RequestParam String name,
-                           @RequestParam String password) {
+                           @RequestParam String email,
+                           @RequestParam String password,
+                           Model model) {
+        if(userRepository.existsByEmail(email)){
+            model.addAttribute("error","Этот Email уже используется");
+            return "register";
+        }
         User user = new User();
-        user.setName(name); // ⚡️ убедись, что в User есть поле username
+        user.setName(name);
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         user.setRole("USER"); // роль по умолчанию
         userRepository.save(user);
